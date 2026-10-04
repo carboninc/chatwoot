@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+usage() {
+  echo "Usage: bin/community-edition <enable|disable|status>"
+}
+
+case "${1:-}" in
+  enable)
+    git sparse-checkout init --no-cone
+    git sparse-checkout set '/*' '!/enterprise/' '!/spec/enterprise/'
+    echo "Community Edition checkout enabled."
+    ;;
+  disable)
+    git sparse-checkout disable
+    echo "Full Chatwoot checkout restored."
+    ;;
+  status)
+    if [[ -d enterprise || -d spec/enterprise ]]; then
+      echo "Full checkout: Enterprise source is present."
+      exit 1
+    fi
+
+    echo "Community Edition checkout: Enterprise source is absent."
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac

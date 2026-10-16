@@ -68,12 +68,14 @@ module Api::V1::Accounts::Concerns::InboxHealthManagement
   private
 
   def fetch_health_data
+    return Wappi::HealthService.new(@inbox.channel).sync! if @inbox.wappi?
     return Whatsapp::HealthService.new(@inbox.channel).sync_health_status!(include_business_profile: true) if whatsapp_cloud_channel?
 
     Twilio::HealthService.new(channel: @inbox.channel).perform
   end
 
   def register_channel_webhook
+    return Wappi::WebhookSetupService.new(@inbox.channel, cleanup_on_failure: false).perform if @inbox.wappi?
     return Whatsapp::WebhookSetupService.new(@inbox.channel).register_callback if whatsapp_cloud_channel?
 
     Twilio::WebhookSetupService.new(channel: @inbox.channel).perform
@@ -82,7 +84,7 @@ module Api::V1::Accounts::Concerns::InboxHealthManagement
   end
 
   def validate_health_supported_channel
-    return if whatsapp_cloud_channel? || twilio_sms_channel?
+    return if @inbox.wappi? || whatsapp_cloud_channel? || twilio_sms_channel?
 
     render json: { error: 'Health data only available for WhatsApp Cloud API and Twilio SMS channels' }, status: :bad_request
   end

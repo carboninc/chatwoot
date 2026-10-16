@@ -383,6 +383,7 @@ export default {
         this.isAWebWidgetInbox ||
         this.isAFacebookInbox ||
         this.isAWhatsAppChannel ||
+        this.isAWappiChannel ||
         this.isAPIInbox ||
         this.isAnEmailChannel ||
         this.isASmsInbox ||
@@ -440,6 +441,7 @@ export default {
         this.isAWebWidgetInbox ||
         this.isAPIInbox ||
         this.isAWhatsAppChannel ||
+        this.isAWappiChannel ||
         this.isATelegramChannel
       );
     },
@@ -465,7 +467,11 @@ export default {
       if (this.isAWhatsAppCloudChannel) {
         return AUDIO_FORMATS.OGG;
       }
-      if (this.isAWhatsAppChannel || this.isATelegramChannel) {
+      if (
+        this.isAWhatsAppChannel ||
+        this.isAWappiChannel ||
+        this.isATelegramChannel
+      ) {
         return AUDIO_FORMATS.MP3;
       }
       if (this.isAPIInbox) {

@@ -8,12 +8,14 @@ class Contacts::ContactableInboxesService
 
   private
 
-  def get_contactable_inbox(inbox)
+  def get_contactable_inbox(inbox) # rubocop:disable Metrics/CyclomaticComplexity
     case inbox.channel_type
     when 'Channel::TwilioSms'
       twilio_contactable_inbox(inbox)
     when 'Channel::Whatsapp'
       whatsapp_contactable_inbox(inbox)
+    when 'Channel::Wappi'
+      wappi_contactable_inbox(inbox)
     when 'Channel::Sms'
       sms_contactable_inbox(inbox)
     when 'Channel::Email'
@@ -52,6 +54,16 @@ class Contacts::ContactableInboxesService
 
     # Remove the plus since thats the format 360 dialog uses
     { source_id: @contact.phone_number.delete('+'), inbox: inbox }
+  end
+
+  def wappi_contactable_inbox(inbox)
+    return if inbox.channel.platform != 'whatsapp'
+
+    existing = inbox.contact_inboxes.where(contact: @contact).last
+    return { source_id: existing.source_id, inbox: inbox } if existing
+    return if @contact.phone_number.blank?
+
+    { source_id: @contact.phone_number.gsub(/\D/, ''), inbox: inbox }
   end
 
   def sms_contactable_inbox(inbox)

@@ -220,6 +220,7 @@ export default {
 
       if (
         this.isATwilioChannel ||
+        this.isAWappiChannel ||
         this.isALineChannel ||
         this.isAPIInbox ||
         (this.isAnEmailChannel && !this.inbox.provider) ||

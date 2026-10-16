@@ -20,6 +20,7 @@ export const INBOX_FEATURE_MAP = {
     INBOX_TYPES.WEB,
     INBOX_TYPES.TWITTER,
     INBOX_TYPES.WHATSAPP,
+    INBOX_TYPES.WAPPI,
     INBOX_TYPES.TELEGRAM,
     INBOX_TYPES.TIKTOK,
     INBOX_TYPES.API,
@@ -28,6 +29,7 @@ export const INBOX_FEATURE_MAP = {
     INBOX_TYPES.WEB,
     INBOX_TYPES.TWITTER,
     INBOX_TYPES.WHATSAPP,
+    INBOX_TYPES.WAPPI,
     INBOX_TYPES.TELEGRAM,
     INBOX_TYPES.TIKTOK,
     INBOX_TYPES.API,
@@ -130,6 +132,10 @@ export const useInbox = (inboxId = null) => {
     );
   });
 
+  const isAWappiChannel = computed(() => {
+    return channelType.value === INBOX_TYPES.WAPPI;
+  });
+
   const isAnInstagramChannel = computed(() => {
     return channelType.value === INBOX_TYPES.INSTAGRAM;
   });
@@ -153,6 +159,7 @@ export const useInbox = (inboxId = null) => {
     isATwilioSMSChannel,
     isAWebWidgetInbox,
     isAWhatsAppChannel,
+    isAWappiChannel,
     isAMicrosoftInbox,
     isAGoogleInbox,
     isATwilioWhatsAppChannel,

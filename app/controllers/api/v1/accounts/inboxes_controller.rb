@@ -1,4 +1,4 @@
-class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
+class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController # rubocop:disable Metrics/ClassLength
   include Api::V1::InboxesHelper
   before_action :fetch_inbox, except: [:index, :create]
   before_action :fetch_agent_bot, only: [:set_agent_bot]
@@ -31,6 +31,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def create
+    return create_wappi_inbox if permitted_params.dig(:channel, :type) == 'wappi'
+
     ActiveRecord::Base.transaction do
       channel = create_channel
       @inbox = Current.account.inboxes.build(
@@ -43,6 +45,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
       )
       @inbox.save!
     end
+  rescue Wappi::Client::Error => e
+    log_handled_error(e)
+    render_could_not_create_error(e.message)
   end
 
   def update
@@ -60,6 +65,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     end
 
     return unless continue_update
+  rescue Wappi::Client::Error => e
+    log_handled_error(e)
+    render_could_not_create_error(e.message)
   end
 
   def agent_bot
@@ -84,6 +92,14 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   private
 
+  def create_wappi_inbox
+    @inbox = Wappi::ChannelCreationService.new(
+      account: Current.account,
+      channel_attributes: permitted_params(Channel::Wappi::CREATION_ATTRS)[:channel].except(:type).to_h,
+      inbox_attributes: permitted_params.except(:channel).to_h.symbolize_keys
+    ).perform
+  end
+
   def fetch_inbox
     @inbox = Current.account.inboxes.find(params[:id])
     authorize @inbox, :show?
@@ -100,7 +116,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def allowed_channel_types
-    %w[web_widget api email line telegram whatsapp sms]
+    %w[web_widget api email line telegram whatsapp sms wappi]
   end
 
   def update_inbox_working_hours
@@ -128,6 +144,11 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def reauthorize_and_update_channel(channel_attributes)
+    if @inbox.wappi?
+      Wappi::ChannelUpdateService.new(@inbox.channel, permitted_params(channel_attributes)[:channel].to_h).perform
+      return
+    end
+
     @inbox.channel.update!(permitted_params(channel_attributes)[:channel])
     @inbox.channel.reauthorized! if @inbox.channel.respond_to?(:reauthorized!)
   end
@@ -206,6 +227,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     {
       'web_widget' => Channel::WebWidget,
       'api' => Channel::Api,
+      'wappi' => Channel::Wappi,
       'email' => Channel::Email,
       'line' => Channel::Line,
       'telegram' => Channel::Telegram,

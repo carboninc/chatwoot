@@ -16,6 +16,7 @@ import TextArea from 'next/textarea/TextArea.vue';
 import { sanitizeAllowedDomains } from 'dashboard/helper/URLHelper';
 import WhatsappBusinessManagementToken from './WhatsappBusinessManagementToken.vue';
 import HmacSecretKey from './components/HmacSecretKey.vue';
+import WappiConfiguration from './WappiConfiguration.vue';
 
 export default {
   components: {
@@ -28,6 +29,7 @@ export default {
     TextArea,
     WhatsappBusinessManagementToken,
     HmacSecretKey,
+    WappiConfiguration,
   },
   mixins: [inboxMixin],
   props: {
@@ -215,7 +217,8 @@ export default {
 </script>
 
 <template>
-  <div v-if="isATwilioChannel">
+  <WappiConfiguration v-if="isAWappiChannel" :inbox="inbox" />
+  <div v-else-if="isATwilioChannel">
     <SettingsFieldSection
       :label="$t('INBOX_MGMT.ADD.TWILIO.API_CALLBACK.TITLE')"
       :help-text="$t('INBOX_MGMT.ADD.TWILIO.API_CALLBACK.SUBTITLE')"

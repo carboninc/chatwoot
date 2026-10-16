@@ -567,6 +567,28 @@
           "ERROR_MESSAGE": "We were not able to save the telegram channel"
         }
       },
+      "WAPPI_CHANNEL": {
+        "TITLE": "WhatsApp via Wappi",
+        "DESC": "Connect an existing Wappi WhatsApp profile. Webhooks are configured automatically.",
+        "INBOX_NAME": {
+          "LABEL": "Inbox name",
+          "PLACEHOLDER": "Enter an inbox name"
+        },
+        "PROFILE_ID": {
+          "LABEL": "Wappi Profile ID",
+          "PLACEHOLDER": "Enter the WhatsApp profile ID",
+          "HELP": "Each Wappi provider profile has its own Profile ID. Use the ID from your WhatsApp profile."
+        },
+        "API_TOKEN": {
+          "LABEL": "Wappi API token",
+          "PLACEHOLDER": "Enter the API token"
+        },
+        "REQUIRED": "This field is required",
+        "SUBMIT_BUTTON": "Connect WhatsApp",
+        "API": {
+          "ERROR_MESSAGE": "We could not connect the Wappi profile"
+        }
+      },
       "AUTH": {
         "TITLE": "Choose a channel",
         "DESC": "Chatwoot supports live-chat widgets, Facebook Messenger, WhatsApp, Emails, etc., as channels. If you want to build a custom channel, you can create it using the API channel. To get started, choose one of the channels below.",
@@ -584,6 +606,10 @@
           "WHATSAPP": {
             "TITLE": "WhatsApp",
             "DESCRIPTION": "Support your customers on WhatsApp"
+          },
+          "WAPPI": {
+            "TITLE": "WhatsApp via Wappi",
+            "DESCRIPTION": "Connect an existing Wappi WhatsApp profile"
           },
           "WHATSAPP_CALL": {
             "TITLE": "WhatsApp Call",
@@ -1094,6 +1120,22 @@
       "USE_INBOX_AVATAR_FOR_BOT": "Use inbox name and avatar for the bot"
     },
     "SETTINGS_POPUP": {
+      "WAPPI": {
+        "PROVIDER": "Provider",
+        "PROVIDER_NAME": "WhatsApp via Wappi",
+        "PROVIDER_HELP": "Messages are sent and received through Wappi.",
+        "PROFILE_ID": "Wappi Profile ID",
+        "STATUS": "Connection status",
+        "CHECK": "Check connection",
+        "CHECK_SUCCESS": "Wappi connection checked successfully",
+        "RECONNECT": "Reconnect webhook",
+        "RECONNECT_SUCCESS": "Wappi webhook registered successfully",
+        "UPDATE_TOKEN": "Replace API token",
+        "UPDATE_TOKEN_HELP": "The new token is verified before it is saved.",
+        "TOKEN_PLACEHOLDER": "Enter a new API token",
+        "TOKEN_SUCCESS": "Wappi API token updated successfully",
+        "ERROR_MESSAGE": "We could not complete the Wappi request"
+      },
       "MESSENGER_HEADING": "Messenger Script",
       "MESSENGER_SUB_HEAD": "Place this button inside your body tag",
       "ALLOWED_DOMAINS": {
@@ -1626,6 +1668,7 @@
       "TWITTER_PROFILE": "Twitter",
       "TWILIO_SMS": "Twilio SMS",
       "WHATSAPP": "WhatsApp",
+      "WAPPI": "WhatsApp via Wappi",
       "SMS": "SMS",
       "EMAIL": "Email",
       "TELEGRAM": "Telegram",

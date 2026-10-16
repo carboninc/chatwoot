@@ -137,6 +137,17 @@ end
 
 json.provider resource.channel.try(:provider)
 
+## Wappi Attributes
+if resource.wappi?
+  json.platform resource.channel.platform
+  json.profile_id resource.channel.profile_id
+  json.api_token_configured resource.channel.api_token.present?
+  json.provider_status resource.channel.provider_status
+  json.status_reason resource.channel.status_reason
+  json.status_checked_at resource.channel.status_checked_at
+  json.reauthorization_required !resource.channel.online?
+end
+
 ## Telegram Attributes
 json.bot_name resource.channel.try(:bot_name) if resource.telegram?
 

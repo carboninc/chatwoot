@@ -17,6 +17,8 @@ class ContactInboxBuilder
       twilio_source_id
     when 'Channel::Whatsapp'
       wa_source_id
+    when 'Channel::Wappi'
+      wappi_source_id
     when 'Channel::Email'
       email_source_id
     when 'Channel::Sms'
@@ -45,6 +47,12 @@ class ContactInboxBuilder
 
     # whatsapp doesn't want the + in e164 format
     @contact.phone_number.delete('+').to_s
+  end
+
+  def wappi_source_id
+    raise ActionController::ParameterMissing, 'contact phone number' unless @contact.phone_number
+
+    @contact.phone_number.gsub(/\D/, '')
   end
 
   def twilio_source_id

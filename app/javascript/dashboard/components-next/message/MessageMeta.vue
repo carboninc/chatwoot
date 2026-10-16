@@ -20,6 +20,7 @@ const {
   isATelegramChannel,
   isATwilioChannel,
   isAWebWidgetInbox,
+  isAWappiChannel,
   isAWhatsAppChannel,
   isAnEmailChannel,
   isAnInstagramChannel,
@@ -62,6 +63,7 @@ const isSent = computed(() => {
 
   if (
     isAWhatsAppChannel.value ||
+    isAWappiChannel.value ||
     isATwilioChannel.value ||
     isAFacebookInbox.value ||
     isASmsInbox.value ||
@@ -86,6 +88,7 @@ const isDelivered = computed(() => {
 
   if (
     isAWhatsAppChannel.value ||
+    isAWappiChannel.value ||
     isATwilioChannel.value ||
     isASmsInbox.value ||
     isAFacebookInbox.value ||
@@ -112,6 +115,7 @@ const isRead = computed(() => {
 
   if (
     isAWhatsAppChannel.value ||
+    isAWappiChannel.value ||
     isATwilioChannel.value ||
     isAFacebookInbox.value ||
     isAnInstagramChannel.value ||

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_04_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -721,6 +721,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.datetime "updated_at", null: false
     t.boolean "tweets_enabled", default: true
     t.index ["account_id", "profile_id"], name: "index_channel_twitter_profiles_on_account_id_and_profile_id", unique: true
+  end
+
+  create_table "channel_wappi", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "platform", null: false
+    t.string "profile_id", null: false
+    t.text "api_token", null: false
+    t.text "webhook_secret", null: false
+    t.string "provider_status"
+    t.string "status_reason"
+    t.datetime "status_checked_at"
+    t.jsonb "status_metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_wappi_on_account_id"
+    t.index ["platform", "profile_id"], name: "index_channel_wappi_on_platform_and_profile_id", unique: true
   end
 
   create_table "channel_web_widgets", id: :serial, force: :cascade do |t|

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_04_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -513,8 +513,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["account_id", "assistant_id", "status", "language"], name: "idx_cap_faq_suggestions_on_account_assistant_status_language"
+    t.index ["account_id"], name: "index_captain_faq_suggestions_on_account_id"
     t.index ["assistant_id"], name: "index_captain_faq_suggestions_on_assistant_id"
     t.index ["embedding"], name: "vector_idx_captain_faq_suggestions_embedding", opclass: :vector_cosine_ops, using: :ivfflat
   end
@@ -723,6 +723,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.index ["account_id", "profile_id"], name: "index_channel_twitter_profiles_on_account_id_and_profile_id", unique: true
   end
 
+  create_table "channel_wappi", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.string "platform", null: false
+    t.string "profile_id", null: false
+    t.text "api_token", null: false
+    t.text "webhook_secret", null: false
+    t.string "provider_status"
+    t.string "status_reason"
+    t.datetime "status_checked_at"
+    t.jsonb "status_metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_channel_wappi_on_account_id"
+    t.index ["platform", "profile_id"], name: "index_channel_wappi_on_platform_and_profile_id", unique: true
+  end
+
   create_table "channel_web_widgets", id: :serial, force: :cascade do |t|
     t.string "website_url"
     t.integer "account_id"
@@ -757,8 +773,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.jsonb "phone_number_health", default: {}, null: false
     t.datetime "phone_number_health_checked_at"
     t.string "phone_number_health_error", limit: 500
-    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
+    t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
   end
 
   create_table "companies", force: :cascade do |t|
@@ -1210,10 +1226,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "inbox_id"
-    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "(account_id IS NOT NULL) AND (inbox_id IS NULL)"
+    t.index ["account_id", "name", "template_type", "locale"], name: "index_email_templates_on_account_scope", unique: true, where: "((account_id IS NOT NULL) AND (inbox_id IS NULL))"
     t.index ["inbox_id", "name", "template_type", "locale"], name: "index_email_templates_on_inbox_scope", unique: true, where: "(inbox_id IS NOT NULL)"
     t.index ["inbox_id"], name: "index_email_templates_on_inbox_id"
-    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "(account_id IS NULL) AND (inbox_id IS NULL)"
+    t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "((account_id IS NULL) AND (inbox_id IS NULL))"
   end
 
   create_table "folders", force: :cascade do |t|

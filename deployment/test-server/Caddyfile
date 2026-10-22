@@ -1,0 +1,11 @@
+{$CHATWOOT_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy rails:3000
+}
+
+# Only published on the host loopback interface; transport is provided by SSH.
+http://:8080 {
+	reverse_proxy rails:3000 {
+		header_up X-Forwarded-Proto https
+	}
+}

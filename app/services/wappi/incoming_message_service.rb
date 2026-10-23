@@ -130,7 +130,7 @@ class Wappi::IncomingMessageService
 
   def find_replied_message
     @inbox.messages.find_by(source_id: @event[:stanza_id]) ||
-      @inbox.messages.where('external_source_ids @> ?', { wappi_message_ids: [@event[:stanza_id]] }.to_json).first
+      @inbox.messages.where("(external_source_ids #>> '{}')::jsonb @> ?", { wappi_message_ids: [@event[:stanza_id]] }.to_json).first
   end
 
   def message_content
@@ -146,15 +146,23 @@ class Wappi::IncomingMessageService
   end
 
   def legacy_chat_id
+    return unless @inbox.channel.platform == 'whatsapp'
+
     [@event[:chatId], @event[:chat_id]].compact.find { |id| id.end_with?('@c.us') }
   end
 
   def contact_name
     names = @outgoing ? [@event[:contact_name], @event[:senderName]] : [@event[:senderName], @event[:contact_name]]
+    names = [@event[:contact_name]] if @outgoing && @inbox.channel.platform == 'max'
     names.find(&:present?) || phone_number.presence || routing_chat_id
   end
 
   def phone_number
+    if @inbox.channel.platform == 'max'
+      digits = @event[:contact_phone].to_s.gsub(/\D/, '')
+      return digits.present? ? "+#{digits}" : nil
+    end
+
     jid = @outgoing ? @event[:to] : @event[:from]
     digits = jid.to_s.delete_suffix('@c.us').gsub(/\D/, '')
     digits.present? ? "+#{digits}" : nil

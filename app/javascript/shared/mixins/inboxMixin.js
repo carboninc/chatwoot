@@ -120,7 +120,7 @@ export default {
       } else if (this.isAWhatsAppChannel) {
         badgeKey = 'whatsapp';
       } else if (this.isAWappiChannel) {
-        badgeKey = 'whatsapp';
+        badgeKey = this.inbox.medium;
       } else if (this.isATiktokChannel) {
         badgeKey = 'tiktok';
       }

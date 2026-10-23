@@ -25,8 +25,8 @@ class Channel::Wappi < ApplicationRecord
 
   self.table_name = 'channel_wappi'
 
-  SUPPORTED_PLATFORMS = %w[whatsapp].freeze
-  PLATFORM_NAMES = { 'whatsapp' => 'WhatsApp' }.freeze
+  SUPPORTED_PLATFORMS = %w[whatsapp max].freeze
+  PLATFORM_NAMES = { 'whatsapp' => 'WhatsApp', 'max' => 'MAX' }.freeze
   CREATION_ATTRS = [:platform, :profile_id, :api_token].freeze
   EDITABLE_ATTRS = [:api_token].freeze
 

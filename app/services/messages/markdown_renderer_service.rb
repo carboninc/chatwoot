@@ -4,7 +4,7 @@ class Messages::MarkdownRendererService
     'Channel::WebWidget' => :render_html,
     'Channel::Telegram' => :render_telegram_html,
     'Channel::Whatsapp' => :render_whatsapp,
-    'Channel::Wappi' => :render_whatsapp,
+    'Channel::Wappi' => :render_wappi,
     'Channel::FacebookPage' => :render_instagram,
     'Channel::Instagram' => :render_instagram,
     'Channel::Line' => :render_line,
@@ -55,6 +55,10 @@ class Messages::MarkdownRendererService
     doc = CommonMarker.render_doc(content_with_preserved_newlines, [:STRIKETHROUGH_DOUBLE_TILDE], [:strikethrough])
     result = renderer.render(doc).gsub(/\n+\z/, '')
     restore_multiple_newlines(result)
+  end
+
+  def render_wappi
+    @channel.platform == 'max' ? render_telegram_html : render_whatsapp
   end
 
   def render_whatsapp

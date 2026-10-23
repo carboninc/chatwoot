@@ -1,15 +1,25 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { useAlert } from 'dashboard/composables';
+import { WAPPI_PLATFORM_NAMES } from 'dashboard/helper/inbox';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 
 import PageHeader from '../../SettingsSubPageHeader.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+
+const props = defineProps({
+  platform: {
+    type: String,
+    default: 'whatsapp',
+    validator: value => Object.hasOwn(WAPPI_PLATFORM_NAMES, value),
+  },
+});
+const platformName = computed(() => WAPPI_PLATFORM_NAMES[props.platform]);
 
 const inboxName = ref('');
 const profileId = ref('');
@@ -43,7 +53,7 @@ const createChannel = async () => {
       name: inboxName.value.trim(),
       channel: {
         type: 'wappi',
-        platform: 'whatsapp',
+        platform: props.platform,
         profile_id: profileId.value.trim(),
         api_token: apiToken.value.trim(),
       },
@@ -62,8 +72,12 @@ const createChannel = async () => {
 <template>
   <div class="h-full w-full p-6 col-span-6">
     <PageHeader
-      :header-title="$t('INBOX_MGMT.ADD.WAPPI_CHANNEL.TITLE')"
-      :header-content="$t('INBOX_MGMT.ADD.WAPPI_CHANNEL.DESC')"
+      :header-title="
+        $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.TITLE', { platform: platformName })
+      "
+      :header-content="
+        $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.DESC', { platform: platformName })
+      "
     />
     <form class="flex flex-col gap-4" @submit.prevent="createChannel">
       <label class="flex flex-col gap-1">
@@ -88,12 +102,18 @@ const createChannel = async () => {
           type="text"
           autocomplete="off"
           :placeholder="
-            $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.PROFILE_ID.PLACEHOLDER')
+            $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.PROFILE_ID.PLACEHOLDER', {
+              platform: platformName,
+            })
           "
           @blur="v$.profileId.$touch"
         />
         <span class="text-sm text-n-slate-11">
-          {{ $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.PROFILE_ID.HELP') }}
+          {{
+            $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.PROFILE_ID.HELP', {
+              platform: platformName,
+            })
+          }}
         </span>
         <span v-if="v$.profileId.$error" class="text-sm text-n-ruby-11">
           {{ $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.REQUIRED') }}
@@ -122,7 +142,11 @@ const createChannel = async () => {
           solid
           blue
           :is-loading="uiFlags.isCreating"
-          :label="$t('INBOX_MGMT.ADD.WAPPI_CHANNEL.SUBMIT_BUTTON')"
+          :label="
+            $t('INBOX_MGMT.ADD.WAPPI_CHANNEL.SUBMIT_BUTTON', {
+              platform: platformName,
+            })
+          "
         />
       </div>
     </form>

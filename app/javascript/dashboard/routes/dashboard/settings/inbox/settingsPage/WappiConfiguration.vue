@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
+import { WAPPI_PLATFORM_NAMES } from 'dashboard/helper/inbox';
 import { useStore } from 'dashboard/composables/store';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import InboxHealthAPI from 'dashboard/api/inboxHealth';
@@ -94,7 +95,11 @@ const updateToken = async () => {
       :help-text="$t('INBOX_MGMT.SETTINGS_POPUP.WAPPI.PROVIDER_HELP')"
     >
       <p class="text-body-main text-n-slate-12">
-        {{ $t('INBOX_MGMT.SETTINGS_POPUP.WAPPI.PROVIDER_NAME') }}
+        {{
+          $t('INBOX_MGMT.SETTINGS_POPUP.WAPPI.PROVIDER_NAME', {
+            platform: WAPPI_PLATFORM_NAMES[inbox.platform],
+          })
+        }}
       </p>
     </SettingsFieldSection>
 

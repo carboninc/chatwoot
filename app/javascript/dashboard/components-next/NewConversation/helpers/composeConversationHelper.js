@@ -203,14 +203,23 @@ export const createContactSearcher = () => {
     try {
       const {
         data: { payload },
-      } = await ContactAPI.search(trimmed, 1, 'name', '', { signal });
+      } = await ContactAPI.search(trimmed, 1, 'name', '', {
+        signal,
+        includeContactInboxes: reachableOnly,
+      });
 
       const camelCasedPayload = camelcaseKeys(payload, { deep: true });
       if (!reachableOnly) return camelCasedPayload || [];
 
-      // Filter contacts that have either phone_number or email
+      // An existing MAX chat remains reachable when its phone number is hidden.
       const filteredPayload = camelCasedPayload?.filter(
-        contact => contact.phoneNumber || contact.email
+        contact =>
+          contact.phoneNumber ||
+          contact.email ||
+          contact.contactInboxes?.some(
+            ({ inbox }) =>
+              inbox.channelType === INBOX_TYPES.WAPPI && inbox.medium === 'max'
+          )
       );
       return filteredPayload || [];
     } catch (error) {

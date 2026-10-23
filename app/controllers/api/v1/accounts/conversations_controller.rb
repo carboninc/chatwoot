@@ -220,12 +220,14 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   def build_contact_inbox
     return if @inbox.blank? || @contact.blank?
 
-    ContactInboxBuilder.new(
-      contact: @contact,
-      inbox: @inbox,
-      source_id: params[:source_id],
-      hmac_verified: hmac_verified?
-    ).perform
+    if @inbox.wappi? && @inbox.channel.platform == 'max'
+      existing = @inbox.contact_inboxes.find_by(contact: @contact, source_id: params[:source_id])
+      raise ActionController::ParameterMissing, 'existing MAX chat' unless existing
+
+      return existing
+    end
+
+    ContactInboxBuilder.new(contact: @contact, inbox: @inbox, source_id: params[:source_id], hmac_verified: hmac_verified?).perform
   end
 
   def conversation_finder

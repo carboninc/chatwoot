@@ -25,6 +25,7 @@ class Channel::Wappi < ApplicationRecord
 
   self.table_name = 'channel_wappi'
 
+  PHONE_SOURCE_PREFIX = 'phone:'.freeze
   SUPPORTED_PLATFORMS = %w[whatsapp max].freeze
   PLATFORM_NAMES = { 'whatsapp' => 'WhatsApp', 'max' => 'MAX' }.freeze
   CREATION_ATTRS = [:platform, :profile_id, :api_token].freeze
@@ -52,6 +53,11 @@ class Channel::Wappi < ApplicationRecord
 
   def provider
     'wappi'
+  end
+
+  def source_id_for_phone(phone_number)
+    digits = phone_number.gsub(/\D/, '')
+    platform == 'max' ? "#{PHONE_SOURCE_PREFIX}#{digits}" : digits
   end
 
   def online?

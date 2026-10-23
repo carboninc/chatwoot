@@ -52,7 +52,7 @@ class ContactInboxBuilder
   def wappi_source_id
     raise ActionController::ParameterMissing, 'contact phone number' unless @contact.phone_number
 
-    @contact.phone_number.gsub(/\D/, '')
+    @inbox.channel.source_id_for_phone(@contact.phone_number)
   end
 
   def twilio_source_id

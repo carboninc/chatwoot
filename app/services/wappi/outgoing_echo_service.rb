@@ -31,7 +31,11 @@ class Wappi::OutgoingEchoService
   end
 
   def update_conversation_routing(message)
-    chat_id = @event[:whatsapp_chat_id].presence
+    chat_id = if @inbox.channel.platform == 'max'
+                @event[:chatId].presence || @event[:chat_id].presence
+              else
+                @event[:whatsapp_chat_id].presence
+              end
     return if chat_id.blank?
 
     conversation = message.conversation

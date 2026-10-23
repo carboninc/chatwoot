@@ -22,7 +22,13 @@ class Wappi::IncomingMessageService
   private
 
   def set_contact
-    @contact_inbox = ContactInboxWithContactBuilder.new(
+    if @inbox.channel.platform == 'max' && phone_number.present?
+      phone_source_id = @inbox.channel.source_id_for_phone(phone_number)
+      @contact_inbox = @inbox.contact_inboxes.find_by(source_id: phone_source_id)
+      @contact_inbox&.update!(source_id: routing_chat_id)
+    end
+
+    @contact_inbox ||= ContactInboxWithContactBuilder.new(
       source_id: routing_chat_id,
       inbox: @inbox,
       contact_attributes: {

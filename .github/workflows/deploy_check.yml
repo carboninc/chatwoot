@@ -1,6 +1,4 @@
-## github action to check deployment success
-## curl the deployment url and check for 200 status
-## deployment url will be of the form chatwoot-pr-<pr_number>.herokuapp.com
+# Validate the fork deployment configuration; upstream uses Heroku review apps.
 name: Deploy Check
 
 on:
@@ -15,8 +13,23 @@ permissions:
   contents: read
 
 jobs:
+  deployment_configuration:
+    name: Validate deployment configuration
+    if: github.repository != 'chatwoot/chatwoot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate test server Compose configuration
+        working-directory: deployment/test-server
+        env:
+          CHATWOOT_IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env config --quiet
+
   deployment_check:
     name: Check Deployment
+    if: github.repository == 'chatwoot/chatwoot'
     runs-on: ubuntu-latest
     steps:
       - name: Install jq
@@ -50,4 +63,3 @@ jobs:
           done
           echo "Deployment failed after $max_attempts attempts"
           exit  1
-          fi

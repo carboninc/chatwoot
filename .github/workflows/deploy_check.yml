@@ -19,6 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate deployment scripts
+        run: |
+          bash -n deployment/test-server/deploy.sh deployment/test-server/deploy-release.sh
+          shellcheck deployment/test-server/deploy.sh deployment/test-server/deploy-release.sh
+          sh -n docker/entrypoints/rails.sh
       - name: Validate test server Compose configuration
         working-directory: deployment/test-server
         env:

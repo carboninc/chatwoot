@@ -80,11 +80,20 @@ Upstream-публикация в Docker Hub и Heroku review apps запуска
 для нужного коммита. На сервер отправляется только сжатая конфигурация из
 `deployment/test-server`, без всего дерева исходников.
 
-GHCR при первом создании пакета использует private visibility. Один раз
-настройте доступ к пакету: для публичного образа разрешите public visibility
-в настройках пакета GitHub; для private-образа выполните `docker login ghcr.io`
-на сервере с отдельным токеном `read:packages`. Токен сборки CI
-(`GITHUB_TOKEN`, `packages:write`) серверу не передаётся.
+Пакет GHCR остаётся приватным. Один раз создайте отдельный classic PAT
+с единственным scope `read:packages` у пользователя с доступом к пакету:
+[создать токен для стенда](https://github.com/settings/tokens/new?description=rc-chatwoot-test&scopes=read:packages).
+Передайте его Docker на сервере через stdin (запускайте из локального терминала):
+
+```sh
+bash -c 'read -r -s -p "GHCR token (read:packages): " rc_ghcr_token; printf "\n"; printf "%s" "$rc_ghcr_token" | ssh root@168.113.171.75 "docker login ghcr.io --username carboninc --password-stdin"; unset rc_ghcr_token'
+```
+
+Ввод скрыт; значение не включается в аргументы команд и историю shell. При входе
+под другой учётной записью замените `carboninc` её GitHub login. Docker сохраняет
+учётные данные в root-конфигурации сервера. Токен сборки CI (`GITHUB_TOKEN`,
+`packages:write`) серверу не передаётся. Без доступа к registry скрипт завершится
+на скачивании образа до остановки приложения.
 
 Из корня локального checkout выполните:
 

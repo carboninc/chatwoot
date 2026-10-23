@@ -61,6 +61,9 @@ ssh -N -L 8025:127.0.0.1:8025 root@168.113.171.75
 `Test Docker Build` проверяет AMD64 и ARM64 на нативных runners. Устаревшая
 сборка ветки отменяется при следующем push. Ruby и JavaScript устанавливаются
 в независимых слоях; изменение одного lock-файла не сбрасывает второй кэш.
+Скомпилированные gems сохраняются до сборки приложения, поэтому сбой assets
+или публикации не теряет результат компиляции. Финальный runtime-образ проверяется
+загрузкой native gems и запуском Node на каждой архитектуре.
 Зависимости Vite устанавливаются один раз, а production-контейнер при запуске
 проверяет готовый bundle вместо повторного `bundle install`.
 
@@ -86,7 +89,7 @@ Upstream-публикация в Docker Hub и Heroku review apps запуска
 Передайте его Docker на сервере через stdin (запускайте из локального терминала):
 
 ```sh
-bash -c 'read -r -s -p "GHCR token (read:packages): " rc_ghcr_token; printf "\n"; printf "%s" "$rc_ghcr_token" | ssh root@168.113.171.75 "docker login ghcr.io --username carboninc --password-stdin"; unset rc_ghcr_token'
+bash -ec 'read -r -s -p "GHCR token (read:packages): " rc_ghcr_token; printf "\n"; printf "%s" "$rc_ghcr_token" | ssh root@168.113.171.75 "docker login ghcr.io --username carboninc --password-stdin"; unset rc_ghcr_token'
 ```
 
 Ввод скрыт; значение не включается в аргументы команд и историю shell. При входе

@@ -2,6 +2,7 @@
 # Executed on the test server by deploy.sh. Output belongs in RELEASE/deploy.log.
 set -Eeuo pipefail
 umask 077
+started_at=$(date +%s)
 revision=${1:?Pass the full commit SHA}
 [[ $revision =~ ^[0-9a-f]{40}$ ]]
 release_dir="/opt/rc-chatwoot-releases/$revision"
@@ -70,7 +71,10 @@ running_revision=$(docker compose exec -T rails cat /app/.git_sha < /dev/null)
 docker compose exec -T sidekiq bundle exec rails runner '
 require "sidekiq/api"
 require "socket"
-abort "Sidekiq is not registered" unless Sidekiq::ProcessSet.new.any? { |process| process["hostname"] == Socket.gethostname }
+require "timeout"
+Timeout.timeout(60) do
+  sleep 2 until Sidekiq::ProcessSet.new.any? { |process| process["hostname"] == Socket.gethostname }
+end
 Channel::Wappi.find_each do |channel|
   health = Wappi::HealthService.new(channel).fetch
   puts({ channel_id: channel.id, platform: channel.platform, status: health[:status], authorized: health[:authorized] }.to_json)
@@ -79,4 +83,5 @@ end
 ' < /dev/null
 ln -sfn "$release_dir" /opt/rc-chatwoot
 trap - ERR
-printf '\nDEPLOYED %s\nBACKUP %s\nPREVIOUS %s\n' "$revision" "$backup_dir" "$previous_dir"
+printf '\nDEPLOYED %s\nBACKUP %s\nPREVIOUS %s\nDURATION %ss\n' \
+  "$revision" "$backup_dir" "$previous_dir" "$(($(date +%s) - started_at))"

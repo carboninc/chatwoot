@@ -139,6 +139,7 @@ json.provider resource.channel.try(:provider)
 
 ## Wappi Attributes
 if resource.wappi?
+  json.medium resource.channel.medium
   json.platform resource.channel.platform
   json.profile_id resource.channel.profile_id
   json.api_token_configured resource.channel.api_token.present?

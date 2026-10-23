@@ -54,6 +54,9 @@ const readableChannelName = computed(() => {
     }
     return twilioChannelName();
   }
+  if (props.channelType === 'Channel::Wappi' && props.medium === 'max') {
+    return t('INBOX_MGMT.CHANNELS.MAX');
+  }
   return t(`INBOX_MGMT.CHANNELS.${i18nMap[props.channelType]}`);
 });
 </script>

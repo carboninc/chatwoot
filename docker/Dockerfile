@@ -86,8 +86,9 @@ RUN if [ "$RAILS_ENV" = "production" ]; then \
   && rm -rf spec node_modules tmp/cache; \
   fi
 
-# Generate .git_sha file with current commit hash
-RUN git rev-parse HEAD > /app/.git_sha
+# Accept the revision explicitly when building from a source archive or worktree.
+ARG GIT_SHA
+RUN if [ -n "$GIT_SHA" ]; then printf '%s\n' "$GIT_SHA"; else git rev-parse HEAD; fi > /app/.git_sha
 
 # Remove unnecessary files
 RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \

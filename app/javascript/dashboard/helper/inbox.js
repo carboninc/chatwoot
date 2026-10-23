@@ -97,6 +97,8 @@ const INBOX_ICON_MAP_FILL = {
   [INBOX_TYPES.TIKTOK]: 'i-ri-tiktok-fill',
 };
 
+export const WAPPI_PLATFORM_NAMES = { whatsapp: 'WhatsApp', max: 'MAX' };
+
 const DEFAULT_ICON_FILL = 'i-ri-chat-1-fill';
 
 const INBOX_ICON_MAP_LINE = {
@@ -236,6 +238,9 @@ export const getInboxIconByType = (
   voiceEnabled = false
 ) => {
   if (voiceEnabled) return getInboxVoiceIcon(type, medium);
+  if (type === INBOX_TYPES.WAPPI && medium === 'max') {
+    return 'i-woot-max';
+  }
 
   const iconMap =
     variant === 'fill' ? INBOX_ICON_MAP_FILL : INBOX_ICON_MAP_LINE;

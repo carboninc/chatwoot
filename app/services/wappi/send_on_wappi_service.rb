@@ -46,8 +46,11 @@ class Wappi::SendOnWappiService < Base::SendOnChannelService
   end
 
   def store_external_ids(responses)
-    message_ids = responses.map do |response|
-      response['message_id'].presence || raise(Wappi::Client::ApiError, 'Wappi response does not contain a message ID')
+    message_ids = responses.filter_map do |response|
+      next response['message_id'] if response['message_id'].present?
+      next if channel.platform == 'max' && response['task_id'].present?
+
+      raise Wappi::Client::ApiError, 'Wappi response does not contain a message ID'
     end
     message.update!(source_id: message.source_id.presence || message_ids.first, external_source_ids: merged_external_ids(responses, message_ids))
   end
@@ -70,7 +73,7 @@ class Wappi::SendOnWappiService < Base::SendOnChannelService
 
   def recipient
     value = conversation.additional_attributes['wappi_chat_id'].presence || contact_inbox.source_id
-    return value if value.to_s.end_with?('@lid')
+    return value.to_s if channel.platform == 'max' || value.to_s.end_with?('@lid')
 
     value.to_s.gsub(/\D/, '')
   end

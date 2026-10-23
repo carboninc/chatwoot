@@ -35,6 +35,7 @@ class Wappi::DeliveryStatusService
   def find_by_external_id(key, value)
     return if value.blank?
 
-    @inbox.messages.where('external_source_ids @> ?', { key => [value] }.to_json).first
+    # Message.store serializes the JSONB value as JSON text.
+    @inbox.messages.where("(external_source_ids #>> '{}')::jsonb @> ?", { key => [value] }.to_json).first
   end
 end

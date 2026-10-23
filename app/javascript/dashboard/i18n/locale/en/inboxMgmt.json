@@ -568,23 +568,23 @@
         }
       },
       "WAPPI_CHANNEL": {
-        "TITLE": "WhatsApp via Wappi",
-        "DESC": "Connect an existing Wappi WhatsApp profile. Webhooks are configured automatically.",
+        "TITLE": "{platform} via Wappi",
+        "DESC": "Connect an existing Wappi {platform} profile. Webhooks are configured automatically.",
         "INBOX_NAME": {
           "LABEL": "Inbox name",
           "PLACEHOLDER": "Enter an inbox name"
         },
         "PROFILE_ID": {
           "LABEL": "Wappi Profile ID",
-          "PLACEHOLDER": "Enter the WhatsApp profile ID",
-          "HELP": "Each Wappi provider profile has its own Profile ID. Use the ID from your WhatsApp profile."
+          "PLACEHOLDER": "Enter the {platform} profile ID",
+          "HELP": "Each Wappi provider profile has its own Profile ID. Use the ID from your {platform} profile."
         },
         "API_TOKEN": {
           "LABEL": "Wappi API token",
           "PLACEHOLDER": "Enter the API token"
         },
         "REQUIRED": "This field is required",
-        "SUBMIT_BUTTON": "Connect WhatsApp",
+        "SUBMIT_BUTTON": "Connect {platform}",
         "API": {
           "ERROR_MESSAGE": "We could not connect the Wappi profile"
         }
@@ -647,6 +647,10 @@
           "VOICE": {
             "TITLE": "Voice",
             "DESCRIPTION": "Integrate with Twilio Voice"
+          },
+          "MAX": {
+            "TITLE": "MAX",
+            "DESCRIPTION": "Connect an existing Wappi MAX profile"
           }
         }
       },
@@ -1122,7 +1126,7 @@
     "SETTINGS_POPUP": {
       "WAPPI": {
         "PROVIDER": "Provider",
-        "PROVIDER_NAME": "WhatsApp via Wappi",
+        "PROVIDER_NAME": "{platform} via Wappi",
         "PROVIDER_HELP": "Messages are sent and received through Wappi.",
         "PROFILE_ID": "Wappi Profile ID",
         "STATUS": "Connection status",
@@ -1676,7 +1680,8 @@
       "API": "API Channel",
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
-      "VOICE": "Voice"
+      "VOICE": "Voice",
+      "MAX": "MAX"
     }
   }
 }

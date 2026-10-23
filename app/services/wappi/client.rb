@@ -1,6 +1,6 @@
 class Wappi::Client
   BASE_URL = 'https://wappi.pro'.freeze
-  PLATFORM_PREFIXES = { 'whatsapp' => 'api' }.freeze
+  PLATFORM_PREFIXES = { 'whatsapp' => 'api', 'max' => 'maxapi' }.freeze
   REQUEST_TIMEOUT = 20
 
   class Error < StandardError; end
@@ -18,6 +18,7 @@ class Wappi::Client
   class NetworkError < Error; end
 
   def initialize(profile_id:, api_token:, platform:)
+    @platform = platform
     @profile_id = profile_id
     @api_token = api_token
     @prefix = PLATFORM_PREFIXES.fetch(platform)
@@ -55,7 +56,7 @@ class Wappi::Client
   private
 
   def recipient_payload(recipient)
-    recipient.to_s.end_with?('@lid') ? { chat_id: recipient } : { recipient: recipient }
+    @platform == 'max' || recipient.to_s.end_with?('@lid') ? { chat_id: recipient } : { recipient: recipient }
   end
 
   def get(path, query: {})

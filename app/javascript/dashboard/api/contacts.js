@@ -63,7 +63,10 @@ class ContactAPI extends ApiClient {
 
   search(search = '', page = 1, sortAttr = 'name', label = '', options = {}) {
     return axios.get(`${this.url}/search`, {
-      params: buildContactParams(page, sortAttr, label, search),
+      params: {
+        ...buildContactParams(page, sortAttr, label, search),
+        include_contact_inboxes: options.includeContactInboxes ?? false,
+      },
       signal: options.signal,
     });
   }

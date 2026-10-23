@@ -4,7 +4,7 @@ class Webhooks::WappiController < ActionController::API
   before_action :validate_payload
 
   def process_payload
-    payload = Wappi::WebhookPayloadNormalizer.new(@payload).perform
+    payload = Wappi::WebhookPayloadNormalizer.new(@payload, platform: @channel.platform).perform
     Webhooks::WappiEventsJob.perform_later(channel_id: @channel.id, payload: payload)
     head :ok
   rescue ArgumentError

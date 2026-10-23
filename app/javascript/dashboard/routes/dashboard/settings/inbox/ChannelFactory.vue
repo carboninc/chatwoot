@@ -30,6 +30,7 @@ const channelViewList = {
   tiktok: Tiktok,
   voice: Voice,
   wappi: Wappi,
+  max: Wappi,
 };
 
 export default defineComponent({
@@ -42,7 +43,8 @@ export default defineComponent({
   },
   render() {
     const ChannelComponent = channelViewList[this.channelName];
-    return ChannelComponent ? h(ChannelComponent) : null;
+    const channelProps = this.channelName === 'max' ? { platform: 'max' } : {};
+    return ChannelComponent ? h(ChannelComponent, channelProps) : null;
   },
 });
 </script>

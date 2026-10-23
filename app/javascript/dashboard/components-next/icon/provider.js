@@ -3,6 +3,7 @@ import {
   TWILIO_CHANNEL_MEDIUM,
   isVoiceCallEnabled,
   getInboxVoiceIcon,
+  getInboxIconByType,
 } from 'dashboard/helper/inbox';
 import { computed } from 'vue';
 
@@ -54,6 +55,10 @@ export function useChannelIcon(inbox) {
     const type = inboxDetails.channel_type;
     let icon = channelTypeIconMap[type];
 
+    if (type === INBOX_TYPES.WAPPI) {
+      icon = getInboxIconByType(type, inboxDetails.medium, 'line');
+    }
+
     if (type === INBOX_TYPES.EMAIL && inboxDetails.provider) {
       if (Object.keys(providerIconMap).includes(inboxDetails.provider)) {
         icon = providerIconMap[inboxDetails.provider];
@@ -84,6 +89,10 @@ export function useChannelBrandIcon(inbox) {
     const inboxDetails = resolveInbox(inbox);
     const type = inboxDetails.channel_type;
     let icon = channelTypeBrandIconMap[type];
+
+    if (type === INBOX_TYPES.WAPPI && inboxDetails.medium === 'max') {
+      return null;
+    }
 
     if (type === INBOX_TYPES.EMAIL && inboxDetails.provider) {
       if (Object.keys(providerBrandIconMap).includes(inboxDetails.provider)) {

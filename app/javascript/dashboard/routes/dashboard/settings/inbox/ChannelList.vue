@@ -48,6 +48,12 @@ const channelList = computed(() => {
       icon: 'i-woot-whatsapp',
     },
     {
+      key: 'max',
+      title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.MAX.TITLE'),
+      description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.MAX.DESCRIPTION'),
+      icon: 'i-woot-max',
+    },
+    {
       key: 'sms',
       title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SMS.TITLE'),
       description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SMS.DESCRIPTION'),

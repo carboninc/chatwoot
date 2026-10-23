@@ -64,6 +64,7 @@ const isActive = computed(() => {
     'api',
     'whatsapp',
     'wappi',
+    'max',
     'sms',
     'telegram',
     'line',

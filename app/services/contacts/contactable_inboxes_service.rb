@@ -59,9 +59,9 @@ class Contacts::ContactableInboxesService
   def wappi_contactable_inbox(inbox)
     existing = inbox.contact_inboxes.where(contact: @contact).last
     return { source_id: existing.source_id, inbox: inbox } if existing
-    return if inbox.channel.platform != 'whatsapp' || @contact.phone_number.blank?
+    return if @contact.phone_number.blank?
 
-    { source_id: @contact.phone_number.gsub(/\D/, ''), inbox: inbox }
+    { source_id: inbox.channel.source_id_for_phone(@contact.phone_number), inbox: inbox }
   end
 
   def sms_contactable_inbox(inbox)

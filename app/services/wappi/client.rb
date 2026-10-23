@@ -56,7 +56,13 @@ class Wappi::Client
   private
 
   def recipient_payload(recipient)
-    @platform == 'max' || recipient.to_s.end_with?('@lid') ? { chat_id: recipient } : { recipient: recipient }
+    if @platform == 'max'
+      return { recipient: recipient.delete_prefix(Channel::Wappi::PHONE_SOURCE_PREFIX) } if recipient.start_with?(Channel::Wappi::PHONE_SOURCE_PREFIX)
+
+      return { chat_id: recipient }
+    end
+
+    recipient.to_s.end_with?('@lid') ? { chat_id: recipient } : { recipient: recipient }
   end
 
   def get(path, query: {})

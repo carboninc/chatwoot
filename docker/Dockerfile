@@ -79,7 +79,7 @@ RUN HUSKY=0 pnpm install --frozen-lockfile
 
 FROM build-base AS pre-builder
 COPY --from=gems /gems/ /gems/
-COPY --from=gems /app/.bundle/ /app/.bundle/
+COPY --from=gems /usr/local/bundle/config /usr/local/bundle/config
 COPY --from=node-dependencies /app/node_modules/ /app/node_modules/
 COPY . /app
 

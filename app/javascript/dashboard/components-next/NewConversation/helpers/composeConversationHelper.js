@@ -205,7 +205,7 @@ export const createContactSearcher = () => {
         data: { payload },
       } = await ContactAPI.search(trimmed, 1, 'name', '', {
         signal,
-        includeContactInboxes: reachableOnly,
+        ...(reachableOnly ? { includeContactInboxes: true } : {}),
       });
 
       const camelCasedPayload = camelcaseKeys(payload, { deep: true });

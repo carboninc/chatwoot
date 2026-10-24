@@ -5,7 +5,7 @@
 
 ## Устройство стенда
 
-- CI собирает приложение через `docker/Dockerfile` и публикует образ в `ghcr.io/carboninc/chatwoot`.
+- CI собирает приложение через `docker/Dockerfile` и публикует образ в `ghcr.io/carboninc/chatwoot-test-server`.
 - Сервер скачивает готовый образ по полному SHA коммита; повторной сборки на сервере нет.
 - Rails и Sidekiq используют один образ с тегом ревизии исходников.
 - PostgreSQL 16 с pgvector, Redis и файлы приложения хранятся в Docker volumes.
@@ -83,7 +83,9 @@ Upstream-публикация в Docker Hub и Heroku review apps запуска
 для нужного коммита. На сервер отправляется только сжатая конфигурация из
 `deployment/test-server`, без всего дерева исходников.
 
-Пакет GHCR остаётся приватным. Один раз создайте отдельный classic PAT
+Для стенда используется отдельный приватный пакет `chatwoot-test-server`.
+Перед публикацией CI проверяет приватность существующего пакета, после первой
+публикации — приватность нового. Публичный `chatwoot` для выкладки не используется. Один раз создайте отдельный classic PAT
 с единственным scope `read:packages` у пользователя с доступом к пакету:
 [создать токен для стенда](https://github.com/settings/tokens/new?description=rc-chatwoot-test&scopes=read:packages).
 Передайте его Docker на сервере через stdin (запускайте из локального терминала):

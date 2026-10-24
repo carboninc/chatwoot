@@ -46,7 +46,7 @@ jobs:
         id: image
         env:
           REPOSITORY: ${{ github.repository }}
-        run: echo "name=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        run: echo "name=ghcr.io/${REPOSITORY,,}-test-server" >> "$GITHUB_OUTPUT"
 
       # Each platform uses a native runner, so QEMU is unnecessary.
       - name: Set up Docker Buildx
@@ -59,6 +59,25 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Require a private package before publishing
+        if: env.PUBLISH_IMAGE == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data } = await github.rest.packages.getPackageForUser({
+                package_type: 'container',
+                package_name: `${context.repo.repo.toLowerCase()}-test-server`,
+                username: context.repo.owner,
+              });
+              if (data.visibility !== 'private') {
+                throw new Error('The deployment package must be private; refusing to publish');
+              }
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              core.info('Package does not exist yet; GitHub creates new packages as private');
+            }
 
       # Persist native gems before assets/image export, including when a later step fails.
       - name: Cache compiled Ruby dependencies
@@ -97,6 +116,21 @@ jobs:
         run: |
           docker run --rm "$IMAGE" sh -c 'bundle check && bundle exec ruby -e '\''%w[grpc pg vips nokogiri commonmarker crass].each { |library| require library }; puts "Native dependencies loaded"'\'' && node --version'
 
+      - name: Verify the published package is private
+        if: env.PUBLISH_IMAGE == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.packages.getPackageForUser({
+              package_type: 'container',
+              package_name: `${context.repo.repo.toLowerCase()}-test-server`,
+              username: context.repo.owner,
+            });
+            if (data.visibility !== 'private') {
+              throw new Error('The published deployment package is not private');
+            }
+            core.info(`Confirmed private package: ${data.name}`);
+
   publish:
     name: Publish deployable image
     if: github.repository != 'chatwoot/chatwoot' && github.event_name != 'pull_request'
@@ -120,7 +154,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           REVISION: ${{ github.sha }}
         run: |
-          image="ghcr.io/${REPOSITORY,,}"
+          image="ghcr.io/${REPOSITORY,,}-test-server"
           docker buildx imagetools create --tag "$image:$REVISION" \
             "$image:$REVISION-amd64" "$image:$REVISION-arm64"
           docker buildx imagetools inspect "$image:$REVISION"

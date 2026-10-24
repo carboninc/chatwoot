@@ -14,7 +14,7 @@ previous_dir=$(readlink -f /opt/rc-chatwoot)
 cd "$release_dir/deployment/test-server"
 cp "$previous_dir/deployment/test-server/.env" .env
 sed -i '/^CHATWOOT_IMAGE_TAG=/d; /^CHATWOOT_IMAGE_REPOSITORY=/d' .env
-printf '\nCHATWOOT_IMAGE_REPOSITORY=ghcr.io/carboninc/chatwoot-test-server\nCHATWOOT_IMAGE_TAG=%s\n' "$revision" >> .env
+printf '\nCHATWOOT_IMAGE_REPOSITORY=ghcr.io/carboninc/chatwoot-private\nCHATWOOT_IMAGE_TAG=%s\n' "$revision" >> .env
 docker compose config --quiet
 
 # Download and validate the image before stopping any running service.

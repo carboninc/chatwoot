@@ -17,3 +17,10 @@ vendor/bundle
 .DS_Store
 *.swp
 *~
+
+# Local tooling, documentation, and logs are not runtime inputs.
+.codex
+.agents
+.github
+docs
+*.log

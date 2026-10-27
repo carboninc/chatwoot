@@ -1,4 +1,5 @@
 <script setup>
+import FeedModeSwitch from 'dashboard/components-next/ClientFeed/FeedModeSwitch.vue';
 import { ref, unref, provide, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
@@ -912,6 +913,7 @@ watch(appliedFilters, () => resetBulkActions());
     ]"
   >
     <slot />
+    <FeedModeSwitch />
     <ChatListHeader
       :page-title="pageTitle"
       :contact-filter="appliedContactFilter"

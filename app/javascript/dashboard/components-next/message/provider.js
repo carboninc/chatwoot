@@ -4,6 +4,7 @@ import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
 import { ATTACHMENT_TYPES } from './constants';
 
 const MessageControl = Symbol('MessageControl');
+export const MESSAGE_ATTACHMENTS = Symbol('MessageAttachments');
 
 /**
  * @typedef {Object} Attachment
@@ -130,7 +131,8 @@ export function useMessageContext() {
     throw new Error(`Component is missing a parent <Message /> component.`);
   }
 
-  const currentChatAttachments = useMapGetter('getSelectedChatAttachments');
+  const storeAttachments = useMapGetter('getSelectedChatAttachments');
+  const currentChatAttachments = inject(MESSAGE_ATTACHMENTS, storeAttachments);
   const filteredCurrentChatAttachments = computed(() => {
     const attachments = currentChatAttachments.value.filter(attachment =>
       [

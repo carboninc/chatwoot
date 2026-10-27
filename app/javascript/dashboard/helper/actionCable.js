@@ -95,6 +95,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onMessageUpdated = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED, data);
     this.app.$store.dispatch('updateMessage', data);
   };
 
@@ -106,6 +107,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onConversationContactChange = payload => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     const { meta = {}, id: conversationId } = payload;
     const { sender } = meta || {};
     if (conversationId) {
@@ -117,6 +119,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onAssigneeChanged = payload => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     const { id } = payload;
     if (id) {
       this.app.$store.dispatch('updateConversation', payload);
@@ -125,6 +128,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onConversationCreated = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     this.app.$store.dispatch('addConversation', data);
     this.fetchConversationStats();
   };
@@ -191,6 +195,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   onLogout = () => AuthAPI.logout();
 
   onMessageCreated = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     const {
       conversation: { last_activity_at: lastActivityAt },
       conversation_id: conversationId,
@@ -207,11 +212,13 @@ class ActionCableConnector extends BaseActionCableConnector {
   onReload = () => window.location.reload();
 
   onStatusChange = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     this.app.$store.dispatch('updateConversation', data);
     this.fetchConversationStats();
   };
 
   onConversationUpdated = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     this.app.$store.dispatch('updateConversation', data);
     this.fetchConversationStats();
   };
@@ -376,6 +383,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onContactDelete = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     this.app.$store.dispatch(
       'contacts/deleteContactThroughConversations',
       data.id
@@ -384,6 +392,7 @@ class ActionCableConnector extends BaseActionCableConnector {
   };
 
   onContactUpdate = data => {
+    emitter.emit(BUS_EVENTS.CLIENT_FEED_UPDATED);
     this.app.$store.dispatch('contacts/updateContact', data);
   };
 

@@ -2,6 +2,7 @@
 import { frontendURL } from '../../../helper/URLHelper';
 import store from '../../../store';
 import ConversationView from './ConversationView.vue';
+import ClientFeedView from './ClientFeedView.vue';
 
 const CONVERSATION_PERMISSIONS = [
   'administrator',
@@ -44,6 +45,12 @@ const redirectFolderConversationIfUnavailable = async (to, _from, next) => {
 
 export default {
   routes: [
+    {
+      path: frontendURL('accounts/:accountId/clients/:contactId?'),
+      name: 'client_feeds',
+      meta: { permissions: CONVERSATION_PERMISSIONS },
+      component: ClientFeedView,
+    },
     {
       path: frontendURL('accounts/:accountId/dashboard'),
       name: 'home',

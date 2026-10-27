@@ -257,6 +257,13 @@ Rails.application.routes.draw do
               resource :enrichment, only: [:create] if ChatwootApp.enterprise?
             end
           end
+          resources :client_feeds, only: [:index, :show] do
+            member do
+              get :messages
+              post :messages, action: :create_message
+              post :read
+            end
+          end
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
               get :active

@@ -2,6 +2,8 @@
 import { computed, useSlots, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useMapGetter } from 'dashboard/composables/store';
+import { useAccount } from 'dashboard/composables/useAccount';
 import { vOnClickOutside } from '@vueuse/components';
 
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -25,6 +27,11 @@ const emit = defineEmits(['goToContactsList', 'toggleBlock']);
 const { t } = useI18n();
 const slots = useSlots();
 const route = useRoute();
+const { accountScopedRoute } = useAccount();
+const inboxes = useMapGetter('inboxes/getInboxes');
+const hasWappi = computed(() =>
+  inboxes.value.some(inbox => inbox.channel_type === 'Channel::Wappi')
+);
 
 const isContactSidebarOpen = ref(false);
 
@@ -106,6 +113,13 @@ const closeMobileSidebar = () => {
                 :label="$t('CONTACT_PANEL.CALL')"
                 size="sm"
               />
+              <RouterLink
+                v-if="hasWappi"
+                :to="accountScopedRoute('client_feeds', { contactId })"
+                class="text-sm text-n-blue-text"
+              >
+                {{ $t('CLIENT_FEED.HISTORY') }}
+              </RouterLink>
               <ComposeConversation :contact-id="contactId">
                 <template #trigger>
                   <Button

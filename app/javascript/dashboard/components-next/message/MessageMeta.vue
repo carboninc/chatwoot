@@ -13,6 +13,16 @@ import { MESSAGE_STATUS, MESSAGE_TYPES } from './constants';
 const exactTimestamp = useExactTimestamp();
 
 const {
+  inboxId,
+  status,
+  isPrivate,
+  createdAt,
+  sourceId,
+  messageType,
+  contentAttributes,
+} = useMessageContext();
+
+const {
   isAFacebookInbox,
   isALineChannel,
   isAPIInbox,
@@ -25,16 +35,7 @@ const {
   isAnEmailChannel,
   isAnInstagramChannel,
   isATiktokChannel,
-} = useInbox();
-
-const {
-  status,
-  isPrivate,
-  createdAt,
-  sourceId,
-  messageType,
-  contentAttributes,
-} = useMessageContext();
+} = useInbox(inboxId);
 
 const readableTime = computed(() =>
   messageTimestamp(createdAt.value, 'LLL d, h:mm a')

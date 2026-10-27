@@ -1,0 +1,83 @@
+name: Deploy test server
+
+on:
+  workflow_run:
+    workflows: [Test Docker Build]
+    branches: [develop]
+    types: [completed]
+
+permissions:
+  contents: read
+
+# A newer build must never cancel an update after migrations have started.
+concurrency:
+  group: rc-chatwoot-test-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.repository == 'carboninc/chatwoot' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: test-server
+      url: https://rc-chatwoot.ru
+    env:
+      REVISION: ${{ github.event.workflow_run.head_sha }}
+      DEPLOY_HOST: root@168.113.171.75
+    steps:
+      - name: Checkout the published revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.TEST_SERVER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          printf 'Host *\n  BatchMode yes\n  StrictHostKeyChecking yes\n  ConnectTimeout 15\n  ServerAliveInterval 30\n' > ~/.ssh/config
+
+      - name: Deploy and wait for server checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/develop" --jq .object.sha)
+          if [[ $latest != "$REVISION" ]]; then
+            echo "Skipped superseded revision \`$REVISION\`; develop is now \`$latest\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          current=$(ssh "$DEPLOY_HOST" 'readlink -f /opt/rc-chatwoot')
+          if [[ $current == "/opt/rc-chatwoot-releases/$REVISION" ]]; then
+            echo "Revision \`$REVISION\` is already deployed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          deployment/test-server/deploy.sh "$REVISION" "$DEPLOY_HOST"
+          ssh "$DEPLOY_HOST" bash -s -- "$REVISION" <<'REMOTE'
+          set -euo pipefail
+          release_dir="/opt/rc-chatwoot-releases/$1"
+          for attempt in $(seq 1 120); do
+            if [[ -f "$release_dir/deploy.exit" ]]; then
+              cat "$release_dir/deploy.log"
+              exit "$(cat "$release_dir/deploy.exit")"
+            fi
+            sleep 10
+          done
+          tail -n 100 "$release_dir/deploy.log"
+          echo 'Timed out waiting for deployment; inspect the server log before retrying.' >&2
+          exit 1
+          REMOTE
+          echo "Deployed \`$REVISION\` to https://rc-chatwoot.ru; server checks passed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519

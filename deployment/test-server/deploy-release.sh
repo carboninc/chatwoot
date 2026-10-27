@@ -22,7 +22,7 @@ fi
 docker compose config --quiet
 
 # Download and validate the image before stopping any running service.
-docker compose pull rails sidekiq
+docker compose pull --policy missing rails sidekiq
 image_revision=$(docker compose run --rm --no-deps --entrypoint cat rails /app/.git_sha < /dev/null)
 [[ $image_revision == "$revision" ]]
 docker compose run --rm --no-deps rails bundle exec rails runner \

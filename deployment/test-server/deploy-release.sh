@@ -13,16 +13,12 @@ previous_dir=$(readlink -f /opt/rc-chatwoot)
 [[ $previous_dir != "$release_dir" ]]
 cd "$release_dir/deployment/test-server"
 cp "$previous_dir/deployment/test-server/.env" .env
-sed -i '/^CHATWOOT_IMAGE_TAG=/d' .env
+sed -i '/^CHATWOOT_IMAGE_TAG=/d; /^CHATWOOT_IMAGE_REPOSITORY=/d' .env
 printf '\nCHATWOOT_IMAGE_TAG=%s\n' "$revision" >> .env
-# Existing installations predate the registry setting; preserve it once configured.
-if ! grep -q '^CHATWOOT_IMAGE_REPOSITORY=' .env; then
-  printf 'CHATWOOT_IMAGE_REPOSITORY=ghcr.io/carboninc/chatwoot\n' >> .env
-fi
 docker compose config --quiet
 
-# Download and validate the image before stopping any running service.
-docker compose pull --policy missing rails sidekiq
+# Build and validate the image before stopping any running service.
+docker compose build rails < /dev/null
 image_revision=$(docker compose run --rm --no-deps --entrypoint cat rails /app/.git_sha < /dev/null)
 [[ $image_revision == "$revision" ]]
 docker compose run --rm --no-deps rails bundle exec rails runner \

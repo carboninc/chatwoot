@@ -1,7 +1,7 @@
 name: rc-chatwoot-test
 
 x-app: &app
-  image: ${CHATWOOT_IMAGE_REPOSITORY:-rc-chatwoot}:${CHATWOOT_IMAGE_TAG:?Set CHATWOOT_IMAGE_TAG}
+  image: rc-chatwoot:${CHATWOOT_IMAGE_TAG:?Set CHATWOOT_IMAGE_TAG}
   env_file: .env
   environment:
     RAILS_ENV: production
@@ -23,6 +23,11 @@ x-app: &app
 services:
   rails:
     <<: *app
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+      args:
+        GIT_SHA: ${CHATWOOT_IMAGE_TAG:?Set CHATWOOT_IMAGE_TAG}
     entrypoint: docker/entrypoints/rails.sh
     command: [bundle, exec, rails, s, -p, '3000', -b, 0.0.0.0]
 

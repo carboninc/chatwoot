@@ -21,7 +21,7 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     environment:
       name: test-server
       url: https://rc-chatwoot.ru
@@ -29,7 +29,7 @@ jobs:
       REVISION: ${{ github.event.workflow_run.head_sha }}
       DEPLOY_HOST: root@168.113.171.75
     steps:
-      - name: Checkout the published revision
+      - name: Checkout the checked revision
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -61,15 +61,11 @@ jobs:
             echo "Revision \`$REVISION\` is already deployed." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          # Pull on the runner: large GHCR downloads are throttled on the test server.
-          image="ghcr.io/${GITHUB_REPOSITORY,,}:$REVISION"
-          docker pull --platform linux/amd64 "$image"
-          docker image save "$image" | gzip -1 | ssh "$DEPLOY_HOST" docker image load
           deployment/test-server/deploy.sh "$REVISION" "$DEPLOY_HOST"
           ssh "$DEPLOY_HOST" bash -s -- "$REVISION" <<'REMOTE'
           set -euo pipefail
           release_dir="/opt/rc-chatwoot-releases/$1"
-          for attempt in $(seq 1 120); do
+          for attempt in $(seq 1 180); do
             if [[ -f "$release_dir/deploy.exit" ]]; then
               cat "$release_dir/deploy.log"
               exit "$(cat "$release_dir/deploy.exit")"

@@ -5,7 +5,7 @@
 
 ## Устройство стенда
 
-- CI собирает приложение через `docker/Dockerfile` и публикует образ в `ghcr.io/carboninc/chatwoot-private`.
+- CI собирает приложение через `docker/Dockerfile` и публикует образ в `ghcr.io/carboninc/chatwoot`.
 - Сервер скачивает готовый образ по полному SHA коммита; повторной сборки на сервере нет.
 - Rails и Sidekiq используют один образ с тегом ревизии исходников.
 - PostgreSQL 16 с pgvector, Redis и файлы приложения хранятся в Docker volumes.
@@ -71,7 +71,7 @@ ssh -N -L 8025:127.0.0.1:8025 root@168.113.171.75
 полного SHA коммита и прогревает кэш базовой ветки для следующих PR. Первый
 запуск нового Dockerfile требует холодной сборки. Ручной `workflow_dispatch`
 по умолчанию только собирает и проверяет выбранную ветку. Для публикации нужно
-явно включить `publish_image` после настройки приватного пакета. PR из внешнего
+явно включить `publish_image`. PR из внешнего
 репозитория только собирается, без доступа к registry на запись.
 
 `Deploy Check` проверяет Compose-конфигурацию с `.env.example` и shell-скрипты.
@@ -80,34 +80,23 @@ Upstream-публикация в Docker Hub и Heroku review apps запуска
 
 ## Обновление тестового сервера
 
-После настройки пакета запустите `Test Docker Build` с `publish_image: true`
+Запустите `Test Docker Build` с `publish_image: true`
 либо дождитесь сборки после push в develop. Дождитесь успешного workflow,
 включая `Publish deployable image`,
 для нужного коммита. На сервер отправляется только сжатая конфигурация из
 `deployment/test-server`, без всего дерева исходников.
 
-Для стенда используется отдельный приватный пакет `chatwoot-private`.
-Перед включением публикации владелец GHCR должен подготовить этот пакет с
-видимостью **Private** и предоставить репозиторию `carboninc/chatwoot` доступ
-**Actions: Write**. CI проверяет приватность до и после публикации; отсутствующий
-или публичный пакет останавливает workflow до push образа. CI не создаёт пакет
-автоматически: фактическая первая публикация в этой установке создавала публичный
-пакет, несмотря на документированное GitHub значение по умолчанию.
-[Настройки видимости и Actions access](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility).
-Публичные пакеты `chatwoot` и `chatwoot-test-server` для выкладки не используются. Один раз создайте отдельный classic PAT
-с единственным scope `read:packages` у пользователя с доступом к пакету:
-[создать токен для стенда](https://github.com/settings/tokens/new?description=rc-chatwoot-test&scopes=read:packages).
-Передайте его Docker на сервере через stdin (запускайте из локального терминала):
+Для стенда используется публичный пакет `ghcr.io/carboninc/chatwoot`,
+соответствующий текущему публичному репозиторию. Сервер скачивает его без
+`docker login` и без токенов GitHub. CI публикует образы штатным `GITHUB_TOKEN`.
+Секреты установки передаются через серверный `.env`, база и файлы находятся
+в volumes; `.env` и локальные данные исключены из Docker-контекста.
 
-```sh
-bash -ec 'read -r -s -p "GHCR token (read:packages): " rc_ghcr_token; printf "\n"; printf "%s" "$rc_ghcr_token" | ssh root@168.113.171.75 "docker login ghcr.io --username carboninc --password-stdin"; unset rc_ghcr_token'
-```
-
-Ввод скрыт; значение не включается в аргументы команд и историю shell. При входе
-под другой учётной записью замените `carboninc` её GitHub login. Docker сохраняет
-учётные данные в root-конфигурации сервера. Токен сборки CI (`GITHUB_TOKEN`,
-`packages:write`) серверу не передаётся. Без доступа к registry скрипт завершится
-на скачивании образа до остановки приложения.
+Адрес registry хранится в `CHATWOOT_IMAGE_REPOSITORY` в серверном `.env`.
+Скрипт выкладки сохраняет это значение между релизами; для старой конфигурации
+без этого поля устанавливает `ghcr.io/carboninc/chatwoot`. При переезде в GitLab
+смените адрес образа в `.env` и настройте публикацию в CI GitLab. Сборка
+приложения и Compose остаются общими.
 
 Из корня локального checkout выполните:
 

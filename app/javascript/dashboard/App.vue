@@ -3,6 +3,7 @@ import { mapGetters } from 'vuex';
 import LoadingState from './components/widgets/LoadingState.vue';
 import NetworkNotification from './components/NetworkNotification.vue';
 import UpdateBanner from './components/app/UpdateBanner.vue';
+import ReleaseUpdateBanner from './components/app/ReleaseUpdateBanner.vue';
 import ImpersonationBanner from './components/app/ImpersonationBanner.vue';
 import StatusBanner from './components/app/StatusBanner.vue';
 import PaymentPendingBanner from './components/app/PaymentPendingBanner.vue';
@@ -32,6 +33,7 @@ export default {
     NetworkNotification,
     ImpersonationBanner,
     UpdateBanner,
+    ReleaseUpdateBanner,
     StatusBanner,
     PaymentPendingBanner,
     WootSnackbarBox,
@@ -145,6 +147,7 @@ export default {
     :dir="isRTL ? 'rtl' : 'ltr'"
   >
     <ImpersonationBanner />
+    <ReleaseUpdateBanner />
     <UpdateBanner :latest-chatwoot-version="latestChatwootVersion" />
     <StatusBanner />
     <template v-if="currentAccountId">

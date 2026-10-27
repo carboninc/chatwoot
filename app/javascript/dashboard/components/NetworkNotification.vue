@@ -11,6 +11,8 @@ import {
 import { useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
+import { reloadWithDrafts } from 'dashboard/helper/appReload';
+import { useAlert } from 'dashboard/composables';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -34,8 +36,12 @@ const canRefresh = computed(
   () => !isReconnecting.value && !isReconnected.value
 );
 
-const refreshPage = () => {
-  window.location.reload();
+const refreshPage = async () => {
+  try {
+    if (!(await reloadWithDrafts())) useAlert(t('RELEASE_UPDATE.FINISH_REPLY'));
+  } catch {
+    useAlert(t('RELEASE_UPDATE.SAVE_FAILED'));
+  }
 };
 
 const closeNotification = () => {

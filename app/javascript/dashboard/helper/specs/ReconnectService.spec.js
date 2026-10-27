@@ -1,6 +1,5 @@
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
-import { differenceInSeconds } from 'date-fns';
 import {
   isAConversationRoute,
   isAInboxViewRoute,
@@ -13,10 +12,6 @@ vi.mock('shared/helpers/mitt', () => ({
     off: vi.fn(),
     emit: vi.fn(),
   },
-}));
-
-vi.mock('date-fns', () => ({
-  differenceInSeconds: vi.fn(),
 }));
 
 vi.mock('dashboard/helper/routeHelpers', () => ({
@@ -96,33 +91,12 @@ describe('ReconnectService', () => {
     });
   });
 
-  describe('getSecondsSinceDisconnect', () => {
-    it('should return 0 if disconnectTime is null', () => {
-      reconnectService.disconnectTime = null;
-      expect(reconnectService.getSecondsSinceDisconnect()).toBe(0);
-    });
-
-    it('should return the number of seconds + threshold since disconnect', () => {
-      reconnectService.disconnectTime = new Date();
-      differenceInSeconds.mockReturnValue(100);
-      expect(reconnectService.getSecondsSinceDisconnect()).toBe(100);
-    });
-  });
-
   describe('handleOnlineEvent', () => {
-    it('should reload the page if disconnected for more than 3 hours', () => {
-      reconnectService.getSecondsSinceDisconnect = vi
-        .fn()
-        .mockReturnValue(10801);
-      reconnectService.handleOnlineEvent();
-      expect(window.location.reload).toHaveBeenCalled();
-    });
-
-    it('should not reload the page if disconnected for less than 3 hours', () => {
-      reconnectService.getSecondsSinceDisconnect = vi
-        .fn()
-        .mockReturnValue(10799);
-      reconnectService.handleOnlineEvent();
+    it('refreshes the account without reloading the page', async () => {
+      await reconnectService.handleOnlineEvent();
+      expect(storeMock.dispatch).toHaveBeenCalledWith('accounts/get', {
+        silent: true,
+      });
       expect(window.location.reload).not.toHaveBeenCalled();
     });
   });
@@ -310,10 +284,9 @@ describe('ReconnectService', () => {
   });
 
   describe('onDisconnect', () => {
-    it('should set disconnectTime and call setConversationLastMessageId', () => {
+    it('should call setConversationLastMessageId', () => {
       reconnectService.setConversationLastMessageId = vi.fn();
       reconnectService.onDisconnect();
-      expect(reconnectService.disconnectTime).toBeInstanceOf(Date);
       expect(reconnectService.setConversationLastMessageId).toHaveBeenCalled();
     });
   });

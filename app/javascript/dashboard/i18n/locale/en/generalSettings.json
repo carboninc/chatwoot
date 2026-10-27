@@ -272,5 +272,11 @@
   "COMMON": {
     "OR": "Or",
     "CLICK_HERE": "click here"
+  },
+  "RELEASE_UPDATE": {
+    "AVAILABLE": "A new version is available.",
+    "REFRESH": "Update",
+    "FINISH_REPLY": "Finish sending or recording your reply, and send or remove unsent attachments before updating. Your text draft has been saved.",
+    "SAVE_FAILED": "Could not save your draft. The page has not been reloaded. Please try again."
   }
 }

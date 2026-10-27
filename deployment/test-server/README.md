@@ -5,7 +5,8 @@
 
 ## Устройство стенда
 
-- Приложение собирается из исходников через `docker/Dockerfile`.
+- CI собирает приложение через `docker/Dockerfile` и публикует образ в `ghcr.io/carboninc/chatwoot`.
+- Сервер скачивает готовый образ по полному SHA коммита; повторной сборки на сервере нет.
 - Rails и Sidekiq используют один образ с тегом ревизии исходников.
 - PostgreSQL 16 с pgvector, Redis и файлы приложения хранятся в Docker volumes.
 - Caddy принимает запросы на 80/443 и автоматически обновляет HTTPS-сертификат.
@@ -55,51 +56,86 @@ ssh -N -L 8025:127.0.0.1:8025 root@168.113.171.75
 Откройте http://localhost:8025. SMTP-доставка наружу не настроена.
 Для интеграций используйте отдельные тестовые учётные записи.
 
-## Проверки pull request
+## Сборка и проверки pull request
 
-Workflow `Deploy Check` проверяет Compose-конфигурацию этого стенда с примером
-`.env.example` и тегом проверяемого коммита. Docker-образы для AMD64 и ARM64
-собираются отдельно в `Test Docker Build`.
+`Test Docker Build` проверяет AMD64 и ARM64 на нативных runners. Устаревшая
+сборка ветки отменяется при следующем push. Ruby и JavaScript устанавливаются
+в независимых слоях; изменение одного lock-файла не сбрасывает второй кэш.
+Скомпилированные gems сохраняются до сборки приложения, поэтому сбой assets
+или публикации не теряет результат компиляции. Финальный runtime-образ проверяется
+загрузкой native gems и запуском Node на каждой архитектуре.
+Зависимости Vite устанавливаются один раз, а production-контейнер при запуске
+проверяет готовый bundle вместо повторного `bundle install`.
 
-Проверка Heroku review app запускается только в основном репозитории Chatwoot:
-у нашего форка нет отдельных Heroku-приложений для pull request. CI не развёртывает
-ветки PR на общем тестовом сервере. После развёртывания проверяйте `/health`
-и обмен сообщениями по инструкции ниже.
+После push в `develop` workflow также публикует обе архитектуры под тегом
+полного SHA коммита и прогревает кэш базовой ветки для следующих PR. Первый
+запуск нового Dockerfile требует холодной сборки. Ручной `workflow_dispatch`
+по умолчанию только собирает и проверяет выбранную ветку. Для публикации нужно
+явно включить `publish_image`. PR из внешнего
+репозитория только собирается, без доступа к registry на запись.
 
-## Обновление исходников
+`Deploy Check` проверяет Compose-конфигурацию с `.env.example` и shell-скрипты.
+Upstream-публикация в Docker Hub и Heroku review apps запускаются только в
+`chatwoot/chatwoot`. Ветки PR на общий сервер автоматически не выкладываются.
 
-Команды ниже используют зафиксированные изменения текущей локальной ветки.
-Конфигурация из этой директории и изменение `GIT_SHA` в Dockerfile должны быть
-зафиксированы в развёртываемой ветке. Выполняйте из корня репозитория:
+## Обновление тестового сервера
+
+Запустите `Test Docker Build` с `publish_image: true`
+либо дождитесь сборки после push в develop. Дождитесь успешного workflow,
+включая `Publish deployable image`,
+для нужного коммита. На сервер отправляется только сжатая конфигурация из
+`deployment/test-server`, без всего дерева исходников.
+
+Для стенда используется публичный пакет `ghcr.io/carboninc/chatwoot`,
+соответствующий текущему публичному репозиторию. Сервер скачивает его без
+`docker login` и без токенов GitHub. CI публикует образы штатным `GITHUB_TOKEN`.
+Секреты установки передаются через серверный `.env`, база и файлы находятся
+в volumes; `.env` и локальные данные исключены из Docker-контекста.
+
+Адрес registry хранится в `CHATWOOT_IMAGE_REPOSITORY` в серверном `.env`.
+Скрипт выкладки сохраняет это значение между релизами; для старой конфигурации
+без этого поля устанавливает `ghcr.io/carboninc/chatwoot`. При переезде в GitLab
+смените адрес образа в `.env` и настройте публикацию в CI GitLab. Сборка
+приложения и Compose остаются общими.
+
+Из корня локального checkout выполните:
 
 ```sh
-deploy_sha=$(git rev-parse HEAD)
-git archive HEAD | ssh root@168.113.171.75 "mkdir -p /opt/rc-chatwoot-releases/$deploy_sha && tar -xf - -C /opt/rc-chatwoot-releases/$deploy_sha"
-ssh root@168.113.171.75 bash -s -- "$deploy_sha" <<'REMOTE'
-set -eu
-release_dir="/opt/rc-chatwoot-releases/$1"
-previous_dir=$(readlink -f /opt/rc-chatwoot)
-cp "$previous_dir/deployment/test-server/.env" "$release_dir/deployment/test-server/.env"
-chmod 600 "$release_dir/deployment/test-server/.env"
-sed -i "s/^CHATWOOT_IMAGE_TAG=.*/CHATWOOT_IMAGE_TAG=$1/" "$release_dir/deployment/test-server/.env"
-cd "$release_dir/deployment/test-server"
-docker compose config --quiet
-docker compose build rails
-docker compose stop rails sidekiq
-docker compose run --rm rails bundle exec rails db:chatwoot_prepare
-docker compose up -d --no-build
-curl --fail --retry 12 --retry-delay 5 --retry-all-errors https://rc-chatwoot.ru/health
-# Сохраняем первоначальную директорию и переключаем постоянный путь на новый релиз.
-if [ ! -L /opt/rc-chatwoot ]; then
-  mv /opt/rc-chatwoot /opt/rc-chatwoot-initial
-fi
-ln -sfn "$release_dir" /opt/rc-chatwoot
-REMOTE
+deployment/test-server/deploy.sh FULL_COMMIT_SHA
 ```
 
-Название Compose-проекта фиксировано (`rc-chatwoot-test`), поэтому новые релизы
-используют существующие данные. Перед изменением схемы сохраните резервную копию
-БД и файлов. Откат образа после миграции требует проверки совместимости схемы.
+Скрипт запускает обновление в фоне, независимо от SSH-сессии. Прогресс и результат:
+
+```sh
+ssh root@168.113.171.75 'tail -f /opt/rc-chatwoot-releases/FULL_COMMIT_SHA/deploy.log'
+ssh root@168.113.171.75 'cat /opt/rc-chatwoot-releases/FULL_COMMIT_SHA/deploy.exit'
+```
+
+`deploy.exit` появляется при завершении: `0` означает успех. Параллельные
+выкладки исключены серверной блокировкой. Повторный запуск той же ревизии
+с существующим логом запрещён, чтобы сохранить результат предыдущей попытки.
+
+До остановки приложения скрипт скачивает образ, сверяет `/app/.git_sha`
+и проверяет подключение к PostgreSQL/Redis. Затем останавливает Rails/Sidekiq,
+сохраняет согласованную копию БД и файлов в `/opt/rc-chatwoot-backups`, запускает
+миграции и обновляет только Rails/Sidekiq. Caddy, PostgreSQL и Redis продолжают
+работать. После проверки HTTP, PostgreSQL, Redis, регистрации Sidekiq и статусов
+Wappi/MAX переключается `/opt/rc-chatwoot`. Сообщения для проверки не отправляются.
+
+Название Compose-проекта (`rc-chatwoot-test`) и volumes сохраняются. Если ошибка
+возникла до миграции, прежние Rails/Sidekiq запускаются снова. После начала
+миграции автоматический откат образа не выполняется: проверьте совместимость
+схемы или восстановите согласованную резервную копию БД и файлов. Логи ошибки
+сохраняются в `startup-failure.log`; текущая ссылка указывает на последний
+успешный релиз. Caddy-конфигурацию при необходимости меняют отдельно.
+
+Для ручного обновления только образа в существующем checkout используется:
+
+```sh
+docker compose pull rails sidekiq
+```
+
+`docker compose build` в конфигурации стенда больше не используется.
 
 ## DNS и HTTPS
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -x
+set -e
 
 # Remove a potentially pre-existing server.pid for Rails.
 rm -rf /app/tmp/pids/server.pid
@@ -20,15 +20,12 @@ done
 
 echo "Database ready to accept connections."
 
-#install missing gems for local dev as we are using base image compiled for production
-bundle install
-
-BUNDLE="bundle check"
-
-until $BUNDLE
-do
-  sleep 2;
-done
+# Production images already contain the locked bundle. Install only for local development.
+if [ "$RAILS_ENV" = "production" ]; then
+  bundle check
+else
+  bundle install
+fi
 
 # Execute the main process of the container
 exec "$@"

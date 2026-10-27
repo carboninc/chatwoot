@@ -5,31 +5,78 @@ on:
     branches:
       - develop
       - master
+  push:
+    branches:
+      - develop
   workflow_dispatch:
+    inputs:
+      publish_image:
+        description: Publish the image to GHCR
+        type: boolean
+        default: false
+
+concurrency:
+  group: docker-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   test-build:
+    if: github.event_name != 'push' || github.repository != 'chatwoot/chatwoot'
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: linux/amd64
+            arch: amd64
             runner: ubuntu-latest
           - platform: linux/arm64
+            arch: arm64
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
+    env:
+      PUBLISH_IMAGE: ${{ github.repository != 'chatwoot/chatwoot' && (github.event_name == 'push' || inputs.publish_image) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Set image name
+        id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "name=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
+      # Each platform uses a native runner, so QEMU is unnecessary.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: env.PUBLISH_IMAGE == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Persist native gems before assets/image export, including when a later step fails.
+      - name: Cache compiled Ruby dependencies
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: gems
+          platforms: ${{ matrix.platform }}
+          cache-from: |
+            type=gha,scope=${{ matrix.platform }}
+            type=gha,scope=${{ matrix.platform }}-gems
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}-gems
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
@@ -37,7 +84,49 @@ jobs:
           context: .
           file: docker/Dockerfile
           platforms: ${{ matrix.platform }}
-          push: false
-          load: false
-          cache-from: type=gha,scope=${{ matrix.platform }}
+          build-args: GIT_SHA=${{ github.sha }}
+          push: ${{ env.PUBLISH_IMAGE == 'true' }}
+          load: true
+          tags: ${{ steps.image.outputs.name }}:${{ github.sha }}-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: |
+            type=gha,scope=${{ matrix.platform }}
+            type=gha,scope=${{ matrix.platform }}-gems
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      - name: Verify the production runtime
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}:${{ github.sha }}-${{ matrix.arch }}
+        run: |
+          docker run --rm "$IMAGE" sh -c 'bundle check && bundle exec ruby -e '\''%w[grpc pg vips nokogiri commonmarker crass datadog].each { |library| require library }; puts "Native dependencies loaded"'\'' && node --version'
+
+  publish:
+    name: Publish deployable image
+    if: github.repository != 'chatwoot/chatwoot' && (github.event_name == 'push' || inputs.publish_image)
+    needs: test-build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Publish both native architectures under the commit SHA
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          image="ghcr.io/${REPOSITORY,,}"
+          docker buildx imagetools create --tag "$image:$REVISION" \
+            "$image:$REVISION-amd64" "$image:$REVISION-arm64"
+          docker buildx imagetools inspect "$image:$REVISION"
+          echo "Deploy image: \`$image:$REVISION\`" >> "$GITHUB_STEP_SUMMARY"

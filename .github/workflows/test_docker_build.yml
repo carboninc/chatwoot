@@ -100,7 +100,7 @@ jobs:
         env:
           IMAGE: ${{ steps.image.outputs.name }}:${{ github.sha }}-${{ matrix.arch }}
         run: |
-          docker run --rm "$IMAGE" sh -c 'bundle check && bundle exec ruby -e '\''%w[grpc pg vips nokogiri commonmarker crass].each { |library| require library }; puts "Native dependencies loaded"'\'' && node --version'
+          docker run --rm "$IMAGE" sh -c 'bundle check && bundle exec ruby -e '\''%w[grpc pg vips nokogiri commonmarker crass datadog].each { |library| require library }; puts "Native dependencies loaded"'\'' && node --version'
 
   publish:
     name: Publish deployable image

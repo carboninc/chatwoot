@@ -61,6 +61,10 @@ jobs:
             echo "Revision \`$REVISION\` is already deployed." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # Pull on the runner: large GHCR downloads are throttled on the test server.
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$REVISION"
+          docker pull --platform linux/amd64 "$image"
+          docker image save "$image" | gzip -1 | ssh "$DEPLOY_HOST" docker image load
           deployment/test-server/deploy.sh "$REVISION" "$DEPLOY_HOST"
           ssh "$DEPLOY_HOST" bash -s -- "$REVISION" <<'REMOTE'
           set -euo pipefail

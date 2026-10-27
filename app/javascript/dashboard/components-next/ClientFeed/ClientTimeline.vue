@@ -12,6 +12,12 @@ import { useDebounceFn } from '@vueuse/core';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useAbortableRequest } from 'dashboard/composables/useAbortableRequest';
+import { useEmitter } from 'dashboard/composables/emitter';
+import {
+  RELOAD_DRAFT_KEYS,
+  rememberReloadDraft,
+  takeReloadDraft,
+} from 'dashboard/helper/appReload';
 import { useAlert } from 'dashboard/composables';
 import { MESSAGE_ATTACHMENTS } from 'dashboard/components-next/message/provider';
 import ClientFeedsAPI from 'dashboard/api/clientFeeds';
@@ -30,7 +36,7 @@ const props = defineProps({
   contactId: { type: Number, required: true },
 });
 const { t } = useI18n();
-const { accountScopedRoute } = useAccount();
+const { accountId, accountScopedRoute } = useAccount();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const { run, isPending } = useAbortableRequest();
 const historyRequest = useAbortableRequest();
@@ -46,6 +52,16 @@ const failed = ref(false);
 const changingStatus = ref(false);
 const readWatermarks = new Map();
 const deliveryUpdates = new Map();
+useEmitter(BUS_EVENTS.BEFORE_APP_RELOAD, request => {
+  request.beforeReload.push(() =>
+    rememberReloadDraft(RELOAD_DRAFT_KEYS.CLIENT_FEED, {
+      accountId: accountId.value,
+      contactId: props.contactId,
+      targetKey: selectedKey.value,
+      quote: quote.value,
+    })
+  );
+});
 let initialized = false;
 let disposed = false;
 
@@ -177,6 +193,15 @@ const load = async (syncLatest = false) => {
       hasMore.value = timeline.has_more;
       if (details.default_conversation_id)
         selectedKey.value = `conversation-${details.default_conversation_id}`;
+      const restoredDraft = takeReloadDraft(RELOAD_DRAFT_KEYS.CLIENT_FEED);
+      if (
+        restoredDraft?.accountId === accountId.value &&
+        restoredDraft.contactId === props.contactId &&
+        targets.value.some(target => target.key === restoredDraft.targetKey)
+      ) {
+        selectedKey.value = restoredDraft.targetKey;
+        quote.value = restoredDraft.quote;
+      }
       initialized = true;
     }
     if (selectedKey.value && !selected.value) {

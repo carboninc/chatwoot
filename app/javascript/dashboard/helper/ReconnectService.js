@@ -1,18 +1,14 @@
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
-import { differenceInSeconds } from 'date-fns';
 import {
   isAConversationRoute,
   isAInboxViewRoute,
 } from 'dashboard/helper/routeHelpers';
 
-const MAX_DISCONNECT_SECONDS = 10800;
-
 class ReconnectService {
   constructor(store, router) {
     this.store = store;
     this.router = router;
-    this.disconnectTime = null;
 
     this.setupEventListeners();
   }
@@ -31,17 +27,8 @@ class ReconnectService {
     emitter.off(BUS_EVENTS.WEBSOCKET_DISCONNECT, this.onDisconnect);
   };
 
-  getSecondsSinceDisconnect = () =>
-    this.disconnectTime
-      ? Math.max(differenceInSeconds(new Date(), this.disconnectTime), 0)
-      : 0;
-
-  // Force reload if the user is disconnected for more than 3 hours
-  handleOnlineEvent = () => {
-    if (this.getSecondsSinceDisconnect() >= MAX_DISCONNECT_SECONDS) {
-      window.location.reload();
-    }
-  };
+  handleOnlineEvent = () =>
+    this.store.dispatch('accounts/get', { silent: true });
 
   fetchConversations = async () => {
     await this.store.dispatch('updateChatListFilters', {
@@ -129,7 +116,6 @@ class ReconnectService {
   };
 
   onDisconnect = () => {
-    this.disconnectTime = new Date();
     this.setConversationLastMessageId();
   };
 

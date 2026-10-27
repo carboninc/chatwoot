@@ -56,6 +56,11 @@ import { isAIAssigneeType } from 'dashboard/helper/agentHelper';
 import { getLastMessage } from 'dashboard/helper/conversationHelper';
 import { CONTENT_TYPES } from 'dashboard/components-next/message/constants';
 
+import {
+  RELOAD_DRAFT_KEYS,
+  rememberReloadDraft,
+  takeReloadDraft,
+} from 'dashboard/helper/appReload';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { LocalStorage } from 'shared/helpers/localStorage';
@@ -169,6 +174,8 @@ export default {
       isFocused: false,
       showEmojiPicker: false,
       attachedFiles: [],
+      pendingMessageSends: 0,
+      pendingAttachmentPreviews: 0,
       isRecordingAudio: false,
       recordingAudioState: '',
       recordingAudioDurationText: '',
@@ -616,6 +623,10 @@ export default {
   },
 
   mounted() {
+    const restoredDraft = takeReloadDraft(RELOAD_DRAFT_KEYS.CONVERSATION);
+    const restoresCurrentConversation =
+      restoredDraft?.conversationId === this.conversationIdByRoute;
+    if (restoresCurrentConversation) this.replyType = restoredDraft.replyType;
     if (this.isInstagramReplyRestricted || this.isVoiceCallConversation) {
       this.replyType = REPLY_EDITOR_MODES.NOTE;
     }
@@ -640,7 +651,15 @@ export default {
     );
 
     this.fetchAndSetReplyTo();
+    if (restoresCurrentConversation) {
+      this.toEmails = restoredDraft.toEmails;
+      this.ccEmails = restoredDraft.ccEmails;
+      this.bccEmails = restoredDraft.bccEmails;
+      this.subject = restoredDraft.subject;
+      this.isQuoteRemoved = restoredDraft.isQuoteRemoved;
+    }
     emitter.on(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.onReplyToMessage);
+    emitter.on(BUS_EVENTS.BEFORE_APP_RELOAD, this.prepareAppReload);
 
     // A hacky fix to solve the drag and drop
     // Is showing on top of new conversation modal drag and drop
@@ -654,6 +673,7 @@ export default {
   unmounted() {
     document.removeEventListener('paste', this.onPaste);
     emitter.off(BUS_EVENTS.TOGGLE_REPLY_TO_MESSAGE, this.onReplyToMessage);
+    emitter.off(BUS_EVENTS.BEFORE_APP_RELOAD, this.prepareAppReload);
     emitter.off(
       BUS_EVENTS.NEW_CONVERSATION_MODAL,
       this.onNewConversationModalActive
@@ -661,6 +681,30 @@ export default {
     emitter.off(CMD_AI_ASSIST, this.executeCopilotAction);
   },
   methods: {
+    prepareAppReload(request) {
+      request.beforeReload.push(() =>
+        rememberReloadDraft(RELOAD_DRAFT_KEYS.CONVERSATION, {
+          conversationId: this.conversationIdByRoute,
+          replyType: this.replyType,
+          toEmails: this.toEmails,
+          ccEmails: this.ccEmails,
+          bccEmails: this.bccEmails,
+          subject: this.subject,
+          isQuoteRemoved: this.isQuoteRemoved,
+        })
+      );
+      request.draftSaves.push(
+        this.saveDraft(this.conversationIdByRoute, this.effectiveReplyMode)
+      );
+      request.blocked ||= !!(
+        this.attachedFiles.length ||
+        this.pendingDirectUploads ||
+        this.pendingAttachmentPreviews ||
+        this.pendingMessageSends ||
+        this.isRecordingAudio ||
+        this.recordingAudioState
+      );
+    },
     openContactInfoTemplateModal() {
       this.requestContactInfoTemplatesOnly = true;
       this.showWhatsAppTemplatesModal = true;
@@ -727,15 +771,12 @@ export default {
       this.attachedFiles = [];
     },
     saveDraft(conversationId, replyType) {
-      if (this.message || this.message === '') {
-        const key = this.getDraftKey(conversationId, replyType);
-        const draftToSave = trimContent(this.message || '', this.maxLength);
-
-        this.$store.dispatch('draftMessages/set', {
-          key,
-          message: draftToSave,
-        });
-      }
+      const key = this.getDraftKey(conversationId, replyType);
+      const draftToSave = trimContent(this.message || '', this.maxLength);
+      return this.$store.dispatch('draftMessages/set', {
+        key,
+        message: draftToSave,
+      });
     },
     setToDraft(conversationId, replyType) {
       this.saveDraft(conversationId, replyType);
@@ -998,6 +1039,7 @@ export default {
       editorMessage = '',
       copilotAcceptedMessage = ''
     ) {
+      this.pendingMessageSends += 1;
       try {
         await this.$store.dispatch(
           'createPendingMessageAndSend',
@@ -1014,6 +1056,8 @@ export default {
         const errorMessage =
           error?.response?.data?.error || this.$t('CONVERSATION.MESSAGE_ERROR');
         useAlert(errorMessage);
+      } finally {
+        this.pendingMessageSends -= 1;
       }
     },
     async onSendWhatsAppReply(messagePayload) {
@@ -1148,8 +1192,10 @@ export default {
       if (!this.showFileUpload && !this.isOnPrivateNote) return;
 
       const reader = new FileReader();
+      this.pendingAttachmentPreviews += 1;
       reader.readAsDataURL(file.file);
       reader.onloadend = () => {
+        this.pendingAttachmentPreviews -= 1;
         this.attachedFiles.push({
           currentChatId: this.currentChat.id,
           resource: blob || file,

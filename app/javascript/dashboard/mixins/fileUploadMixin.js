@@ -11,6 +11,9 @@ import {
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
 export default {
+  data() {
+    return { pendingDirectUploads: 0 };
+  },
   computed: {
     ...mapGetters({
       accountId: 'getCurrentAccountId',
@@ -83,7 +86,9 @@ export default {
         }
       );
 
+      this.pendingDirectUploads += 1;
       upload.create((error, blob) => {
+        this.pendingDirectUploads -= 1;
         if (error) {
           useAlert(error);
         } else {
